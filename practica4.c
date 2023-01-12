@@ -24,7 +24,8 @@
 #include "vrambuf.h"
 //#link "vrambuf.c"
 
-#define DEF_METASPRITE_2x2(name,code,pal)\
+//Metasprite de 3x3 normal
+#define DEF_METASPRITE_3x3(name,code,pal)\
 const unsigned char name[]={\
         0,      0,      (code)+0,   pal, \
         8,      0,      (code)+1,   pal, \
@@ -36,8 +37,8 @@ const unsigned char name[]={\
         8,      16,      (code)+7,   pal, \
         16,      16,      (code)+8,   pal, \
         128};
-
-#define DEF_METASPRITE_2x2_FLIP(name,code,pal)\
+//Metasprite de 3x3 invertido horizontalmente
+#define DEF_METASPRITE_3x3_FLIP(name,code,pal)\
 const unsigned char name[]={\
         16,      0,      (code)+0,  (pal)|OAM_FLIP_H, \
         8,      0,      (code)+1,   (pal)|OAM_FLIP_H, \
@@ -49,21 +50,21 @@ const unsigned char name[]={\
         8,      16,      (code)+7,   (pal)|OAM_FLIP_H, \
         0,      16,      (code)+8,   (pal)|OAM_FLIP_H, \
         128};
-
-DEF_METASPRITE_2x2(playerEstatico, 0x80, 0);
-DEF_METASPRITE_2x2(playerSalto, 0xad, 0);
-DEF_METASPRITE_2x2(playerCamina1, 0x89, 0);
-DEF_METASPRITE_2x2(playerCamina2, 0x92, 0);
-DEF_METASPRITE_2x2(playerCamina3, 0x9b, 0);
-DEF_METASPRITE_2x2(playerCamina4, 0xa4, 0);
-
-DEF_METASPRITE_2x2_FLIP(playerEstaticoL, 0x80, 0);
-DEF_METASPRITE_2x2_FLIP(playerSaltoL, 0xad, 0);
-DEF_METASPRITE_2x2_FLIP(playerCaminaL1, 0x89, 0);
-DEF_METASPRITE_2x2_FLIP(playerCaminaL2, 0x92, 0);
-DEF_METASPRITE_2x2_FLIP(playerCaminaL3, 0x9b, 0);
-DEF_METASPRITE_2x2_FLIP(playerCaminaL4, 0xa4, 0);
-
+//Definicion de metasprites 
+DEF_METASPRITE_3x3(playerEstatico, 0x80, 0);
+DEF_METASPRITE_3x3(playerSalto, 0xad, 0);
+DEF_METASPRITE_3x3(playerCamina1, 0x89, 0);
+DEF_METASPRITE_3x3(playerCamina2, 0x92, 0);
+DEF_METASPRITE_3x3(playerCamina3, 0x9b, 0);
+DEF_METASPRITE_3x3(playerCamina4, 0xa4, 0);
+//Definicion de metasprites invertidos
+DEF_METASPRITE_3x3_FLIP(playerEstaticoL, 0x80, 0);
+DEF_METASPRITE_3x3_FLIP(playerSaltoL, 0xad, 0);
+DEF_METASPRITE_3x3_FLIP(playerCaminaL1, 0x89, 0);
+DEF_METASPRITE_3x3_FLIP(playerCaminaL2, 0x92, 0);
+DEF_METASPRITE_3x3_FLIP(playerCaminaL3, 0x9b, 0);
+DEF_METASPRITE_3x3_FLIP(playerCaminaL4, 0xa4, 0);
+//Secuencia del personaje en movimiento
 const unsigned char* const playerSec[16] = {
   playerCaminaL1, playerCaminaL2, playerCaminaL3, 
   playerCaminaL4, playerCaminaL1, playerCaminaL2, 
@@ -89,91 +90,116 @@ const char PALETTE[32] = {
   0x0D,0x27,0x2A	// paleta de sprite 3
 };
 
-// setup PPU and tables
 void setup_graphics() {
-  // clear sprites
   oam_clear();
-  // set palette colors
   pal_all(PALETTE);
 }
-
-#define PERSONAJES 2
-
-// posición del personaje en X y Y
+//Definición del total de personajes a tener
+#define PERSONAJES 2 
+// Arreglo de posición del personaje en X y Y
 byte john_x[PERSONAJES];
-// actor x/y deltas per frame (signed)
+byte john_y[PERSONAJES];
+// Arreglo de deltas del actor (movimiento)
 sbyte john_dx[PERSONAJES];
+sbyte john_dy[PERSONAJES];
+//Orientación/dirección del personaje
 byte dir[PERSONAJES];
 
+//////////////
 void main(void)
 {
-  char oam_id;
-  char pad;	// controller flags
-  char i;
-  byte runseq=0;
+  char oam_id;	// id del objeto en oam
+  char pad;	// Bandera del control
+  char i;	// Identificador 
+  byte runseq=0;// Atributo para realizar secuencia de movimiento
   
   setup_graphics();
-  // draw message  
-  //vram_adr(NTADR_A(2,2));
-  //vram_write("HELLO, WORLD!", 12);
-  // enable rendering
+  vram_adr(NTADR_A(2,2));
+  vram_write("HELLO, WORLD!", 12);
   ppu_on_all();
-  // infinite loop
   
   for(i=0;i<PERSONAJES;++i){
     john_x[i]=10*i + 150;
+    john_y[i]=30*i + 100;
+    
     john_dx[i]=0;
+    john_dy[i]=0;
+    
   }
   
   while(1) {
     oam_id=0;
+    //Ciclo para identificar los dos controles
     for(i=0;i<2;i++){
-      pad = pad_poll(i);
-      
-      if (pad&PAD_LEFT && john_x[i]>9)
+      pad = pad_poll(i); // i=0 para personaje 1; i=1 para personaje 2
+      //Va a la izquierda antes de llegar al límite?
+      if (pad&PAD_LEFT && john_x[i]>6)
       {
         john_dx[i]=-2;
         dir[i] = 1;
       }
+      //Va a la derecha antes de llegar al límite?
       else if (pad&PAD_RIGHT && john_x[i]<225)
       {
         john_dx[i]=2;
         dir[i]=0;
       }
-     else 
+      //no se mueve en el eje x
+      else 
       {
         john_dx[i]=0;
       }
+      //Va hacia arriba antes de llegar al límite?
+      if (pad&PAD_UP && john_y[i]>7)
+      {
+        john_dy[i]=-2;
+      }
+      //Va hacia abajo antes de llegar al límite?
+      else if (pad&PAD_DOWN && john_y[i]<200)
+      {
+        john_dy[i]=2;
+      }
+      //no se mueve en el eje y
+     else 
+      {
+        john_dy[i]=0;
+      }
     }
     
+    // Imprimir personajes
     for(i=0;i<PERSONAJES;i++){
-      char sec;
+      char sec; 
       char caraX = 0;
       char caraY = 0;
-      
       ++runseq;
+      
       if(runseq>=80) runseq = 0;
       if(dir[i]==0) //Frames en direccion a la derecha
   	sec = (runseq/10)+8;
       else  //Frames en dirección a la izquierda
         sec = (runseq/10);
-      if(john_dx[i]==0){
+      // Si el personaje no tiene movimiento
+      if(john_dx[i]==0&&john_dy[i]==0){
+        // Si mira a la derecha
         if(dir[i]==0){
+          // Imprime la cara del personaje para la posición estática
           caraX=9;
           caraY=4;
-          oam_id=oam_meta_spr(john_x[i], 30*i+100 , oam_id,playerEstatico);
-          oam_id = oam_spr(john_x[i]+caraX, 30*i+100 +caraY, 0xCF,1, oam_id);
+          oam_id=oam_meta_spr(john_x[i], john_y[i] , oam_id,playerEstatico);
+          oam_id = oam_spr(john_x[i]+caraX,  john_y[i] +caraY, 0xCF,1, oam_id);
         }
+        // Si mira a la izquierda
         else{
           caraX=7;
           caraY=4;
-          oam_id=oam_meta_spr(john_x[i], 30*i+100 , oam_id,playerEstaticoL);
-          oam_id = oam_spr(john_x[i]+caraX, 30*i+100 +caraY, 0xCF,1|OAM_FLIP_H, oam_id);
+          oam_id=oam_meta_spr(john_x[i],  john_y[i] , oam_id,playerEstaticoL);
+          oam_id = oam_spr(john_x[i]+caraX,  john_y[i] +caraY, 0xCF,1|OAM_FLIP_H, oam_id);
         }
       }
+      //Si hay movimiento
       else {
-      oam_id=oam_meta_spr(john_x[i], 30*i+100 , oam_id,playerSec[sec]);
-        
+      oam_id=oam_meta_spr(john_x[i],  john_y[i] , oam_id,playerSec[sec]);
+      //PARA LA CARA DEL PERSONAJE  
       if(dir[i]==0){ //Lado derecho
         switch(sec){
                                         
@@ -215,19 +241,23 @@ void main(void)
             break;
         }
       }
+        // Imprime cara del personaje
         if(dir[i]==0)
-          oam_id = oam_spr(john_x[i]+caraX, 30*i+100 +caraY, 0xCF,1, oam_id);
+          oam_id = oam_spr(john_x[i]+caraX, john_y[i] +caraY, 0xCF,1, oam_id);
         else
-          oam_id = oam_spr(john_x[i]+caraX, 30*i+100 +caraY, 0xCF,1|OAM_FLIP_H, oam_id);
+          oam_id = oam_spr(john_x[i]+caraX,  john_y[i] +caraY, 0xCF,1|OAM_FLIP_H, oam_id);
           
       }
+      //
       john_x[i] += john_dx[i];
+      john_y[i] += john_dy[i];
       
     }
     
     ppu_wait_nmi();
+    if (oam_id!=0)oam_hide_rest(oam_off); //ocultar todos los sprites restantes del desplazamiento
 
-    oam_clear();	//Limpia oam
+    //oam_clear();	//Limpia oam
 
   }
 }
