@@ -173,7 +173,8 @@ void main(void)
       char caraY = 0;
       ++runseq;
       
-      if(runseq>=80) runseq = 0;
+      if(runseq>=80) 
+        runseq = 0;
       if(dir[i]==0) //Frames en direccion a la derecha
   	sec = (runseq/10)+8;
       else  //Frames en dirección a la izquierda
@@ -199,6 +200,7 @@ void main(void)
       //Si hay movimiento
       else {
       oam_id=oam_meta_spr(john_x[i],  john_y[i] , oam_id,playerSec[sec]);
+        
       //PARA LA CARA DEL PERSONAJE  
       if(dir[i]==0){ //Lado derecho
         switch(sec){
@@ -254,10 +256,8 @@ void main(void)
       
     }
     
-    ppu_wait_nmi();
-    if (oam_id!=0)oam_hide_rest(oam_off); //ocultar todos los sprites restantes del desplazamiento
-
-    //oam_clear();	//Limpia oam
-
+    ppu_wait_frame();
+    //ocultar todos los sprites restantes del desplazamiento
+    if (oam_id!=0)oam_hide_rest(oam_off); 
   }
 }
