@@ -3,24 +3,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-#include <stdlib.h>
-#include <string.h>
-
-// include NESLIB header
 #include "neslib.h"
-
-// include CC65 NES Header (PPU)
 #include <nes.h>
-
-// link the pattern table into CHR ROM
 //#link "chr_generic.s"
-
-// BCD arithmetic support
 #include "bcd.h"
 //#link "bcd.c"
-
-// VRAM update buffer
 #include "vrambuf.h"
 //#link "vrambuf.c"
 
@@ -103,7 +90,7 @@ byte john_y[PERSONAJES];
 sbyte john_dx[PERSONAJES];
 sbyte john_dy[PERSONAJES];
 //Orientación/dirección del personaje
-byte dir[PERSONAJES];
+byte dir[PERSONAJES]; //0 para derecha | 1 para izquierda
 
 //////////////
 void main(void)
@@ -115,7 +102,7 @@ void main(void)
   
   setup_graphics();
   vram_adr(NTADR_A(2,2));
-  vram_write("HELLO, WORLD!", 12);
+  vram_write("HOLA MUNDO", 12);
   ppu_on_all();
   
   for(i=0;i<PERSONAJES;++i){
@@ -129,7 +116,7 @@ void main(void)
   
   while(1) {
     oam_id=0;
-    //Ciclo para identificar los dos controles
+    //*Ciclo para identificar los dos controles
     for(i=0;i<2;i++){
       pad = pad_poll(i); // i=0 para personaje 1; i=1 para personaje 2
       //Va a la izquierda antes de llegar al límite?
@@ -165,6 +152,7 @@ void main(void)
         john_dy[i]=0;
       }
     }
+    //*FIN CICLO FOR
     
     // Imprimir personajes
     for(i=0;i<PERSONAJES;i++){
@@ -179,6 +167,7 @@ void main(void)
   	sec = (runseq/10)+8;
       else  //Frames en dirección a la izquierda
         sec = (runseq/10);
+      
       // Si el personaje no tiene movimiento
       if(john_dx[i]==0&&john_dy[i]==0){
         // Si mira a la derecha
@@ -249,15 +238,15 @@ void main(void)
         else
           oam_id = oam_spr(john_x[i]+caraX,  john_y[i] +caraY, 0xCF,1|OAM_FLIP_H, oam_id);
           
-      }
-      //
+      }//FIN SI HAY MOVIMIENTO
+      
       john_x[i] += john_dx[i];
       john_y[i] += john_dy[i];
       
-    }
+    }//FIN IMPRIMIR PERSONAJES
     
     ppu_wait_frame();
     //ocultar todos los sprites restantes del desplazamiento
     if (oam_id!=0)oam_hide_rest(oam_off); 
-  }
-}
+  }//FIN WHILE
+}//FIN MAIN
